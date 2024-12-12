@@ -62,18 +62,35 @@ def calculate_cost(df: pd.DataFrame):
     return total_cost, cost_matrix, lin, col
 
 
+def truncate_float(float_number, decimal_places):
+    multiplier = 10**decimal_places
+    return int(float_number * multiplier) / multiplier
+
+
+def format_number(num):
+    num = truncate_float(num, 3)
+    return str(num).replace(".", ",")
+
+
 def save_txt(lin, col, matriz_custo, df, custo_total, allocation):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"alocacao_hungaro_{timestamp}.txt"
     with open(filename, "w", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, delimiter=";")
         writer.writerow(["ID", allocation, "Custo"])
         for i, j in zip(lin, col):
-            writer.writerow([df.index[i], df.columns[j], matriz_custo[i, j]])
+            writer.writerow(
+                [df.index[i], df.columns[j], format_number(matriz_custo[i, j])]
+            )
         writer.writerow([])
-        writer.writerow(["Custo Total", custo_total, ""])
+        writer.writerow(["Custo Total", format_number(custo_total), ""])
     return filename
 
 
-# Created/Modified files during execution:
-# assignment_report_YYYYMMDD_HHMMSS.csv will be created when function is run
+def hungaro(url, param_a, param_b, peso_a, allocation):
+    dados = data_load_preprocessing(url)
+    dados = add_scaled_index(dados, param_a, param_b, peso_a)
+    dados = rotate_and_fill(dados, allocation)
+    custo_total, matriz_custo, lin, col = calculate_cost(dados)
+    filename = save_txt(lin, col, matriz_custo, dados, custo_total, allocation)
+    return custo_total, filename
