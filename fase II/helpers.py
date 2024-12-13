@@ -38,16 +38,10 @@ def add_scaled_index(df: pd.DataFrame, param_a, param_b, peso_a):
         exit(1)
 
 
-def rotate_and_fill(df: pd.DataFrame, objetivo: str):
+def rotate_and_fill(df: pd.DataFrame, id_rotulo: str, objetivo: str):
     try:
-        # check
-        # rot_id = df.get("ID")
-        # if isinstance(rot_id, NoneType):
-        #     raise KeyError("ID")
-
-        # rotate
         df_r = df.pivot_table(
-            values="custo", index="ID", columns=objetivo, aggfunc="max"
+            values="custo", index=id_rotulo, columns=objetivo, aggfunc="max"
         ).fillna(1)
         return df_r
     except KeyError as err:
@@ -72,12 +66,12 @@ def format_number(num):
     return str(num).replace(".", ",")
 
 
-def save_txt(lin, col, matriz_custo, df, custo_total, allocation):
+def save_txt(lin, col, matriz_custo, df, custo_total, id_rotulo, allocation):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"alocacao_hungaro_{timestamp}.txt"
     with open(filename, "w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file, delimiter=";")
-        writer.writerow(["ID", allocation, "Custo"])
+        writer.writerow([id_rotulo, allocation, "Custo"])
         for i, j in zip(lin, col):
             writer.writerow(
                 [df.index[i], df.columns[j], format_number(matriz_custo[i, j])]
@@ -87,10 +81,12 @@ def save_txt(lin, col, matriz_custo, df, custo_total, allocation):
     return filename
 
 
-def hungaro(url, param_a, param_b, peso_a, allocation):
+def hungaro(url, id_rotulo, param_a, param_b, peso_a, allocation):
     dados = data_load_preprocessing(url)
     dados = add_scaled_index(dados, param_a, param_b, peso_a)
-    dados = rotate_and_fill(dados, allocation)
+    dados = rotate_and_fill(dados, id_rotulo, allocation)
     custo_total, matriz_custo, lin, col = calculate_cost(dados)
-    filename = save_txt(lin, col, matriz_custo, dados, custo_total, allocation)
+    filename = save_txt(
+        lin, col, matriz_custo, dados, custo_total, id_rotulo, allocation
+    )
     return custo_total, filename
